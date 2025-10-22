@@ -1,0 +1,405 @@
+import React, { useState, useEffect } from 'react';
+import { Search, MessageSquare, ThumbsUp, ThumbsDown, Send, Book, User, AlertTriangle } from 'lucide-react';
+
+const BookTalkApp = () => {
+  const [view, setView] = useState('search');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [selectedBook, setSelectedBook] = useState(null);
+  const [comments, setComments] = useState({});
+  const [newComment, setNewComment] = useState('');
+  const [replyTo, setReplyTo] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [username, setUsername] = useState('');
+  const [showUsernamePrompt, setShowUsernamePrompt] = useState(true);
+
+  useEffect(() => {
+    loadStoredData();
+  }, []);
+
+  const loadStoredData = async () => {
+    try {
+      const result = await window.storage.list('comments:');
+      if (result && result.keys) {
+        const allComments = {};
+        for (const key of result.keys) {
+          const data = await window.storage.get(key);
+          if (data) {
+            const isbn = key.replace('comments:', '');
+            allComments[isbn] = JSON.parse(data.value);
+          }
+        }
+        setComments(allComments);
+      }
+    } catch (error) {
+      console.log('No stored comments yet');
+    }
+  };
+
+  const searchBooks = async () => {
+    if (!searchQuery.trim()) return;
+    
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `https://openlibrary.org/search.json?q=${encodeURIComponent(searchQuery)}&limit=10`
+      );
+      const data = await response.json();
+      
+      const books = data.docs.map(doc => ({
+        title: doc.title,
+        author: doc.author_name?.[0] || 'Unknown Author',
+        isbn: doc.isbn?.[0] || doc.key,
+        year: doc.first_publish_year,
+        cover: doc.cover_i ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg` : null,
+        key: doc.key
+      }));
+      
+      setSearchResults(books);
+      setView('results');
+    } catch (error) {
+      console.error('Search failed:', error);
+    }
+    setLoading(false);
+  };
+
+  const selectBook = (book) => {
+    setSelectedBook(book);
+    setView('book');
+  };
+
+  const saveComments = async (isbn, commentData) => {
+    try {
+      await window.storage.set(`comments:${isbn}`, JSON.stringify(commentData));
+    } catch (error) {
+      console.error('Failed to save comments:', error);
+    }
+  };
+
+  const addComment = () => {
+    if (!newComment.trim() || !username.trim()) return;
+    
+    const bookId = selectedBook.isbn;
+    const comment = {
+      id: Date.now(),
+      text: newComment,
+      author: username,
+      timestamp: new Date().toISOString(),
+      upvotes: 0,
+      downvotes: 0,
+      replies: [],
+      parentId: replyTo
+    };
+
+    const bookComments = comments[bookId] || [];
+    
+    if (replyTo) {
+      const addReply = (commentList) => {
+        for (let c of commentList) {
+          if (c.id === replyTo) {
+            c.replies.push(comment);
+            return true;
+          }
+          if (c.replies.length > 0 && addReply(c.replies)) {
+            return true;
+          }
+        }
+        return false;
+      };
+      addReply(bookComments);
+    } else {
+      bookComments.push(comment);
+    }
+
+    const newComments = { ...comments, [bookId]: bookComments };
+    setComments(newComments);
+    saveComments(bookId, bookComments);
+    setNewComment('');
+    setReplyTo(null);
+  };
+
+  const vote = (commentId, type, parentList = null) => {
+    const bookId = selectedBook.isbn;
+    const bookComments = [...(comments[bookId] || [])];
+    
+    const updateVote = (commentList) => {
+      for (let c of commentList) {
+        if (c.id === commentId) {
+          if (type === 'up') c.upvotes++;
+          else c.downvotes++;
+          return true;
+        }
+        if (c.replies.length > 0 && updateVote(c.replies)) {
+          return true;
+        }
+      }
+      return false;
+    };
+    
+    updateVote(bookComments);
+    const newComments = { ...comments, [bookId]: bookComments };
+    setComments(newComments);
+    saveComments(bookId, bookComments);
+  };
+
+  const CommentComponent = ({ comment, depth = 0 }) => (
+    <div className={`${depth > 0 ? 'ml-8 mt-3' : 'mt-4'} border-l-2 border-gray-200 pl-4`}>
+      <div className="flex items-start gap-3">
+        <div className="flex flex-col items-center gap-1">
+          <button 
+            onClick={() => vote(comment.id, 'up')}
+            className="text-gray-400 hover:text-green-600 transition-colors"
+          >
+            <ThumbsUp size={16} />
+          </button>
+          <span className="text-sm font-medium">{comment.upvotes - comment.downvotes}</span>
+          <button 
+            onClick={() => vote(comment.id, 'down')}
+            className="text-gray-400 hover:text-red-600 transition-colors"
+          >
+            <ThumbsDown size={16} />
+          </button>
+        </div>
+        <div className="flex-1">
+          <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+            <User size={14} />
+            <span className="font-medium">{comment.author}</span>
+            <span>•</span>
+            <span>{new Date(comment.timestamp).toLocaleDateString()}</span>
+          </div>
+          <p className="text-gray-800 mb-2">{comment.text}</p>
+          <button 
+            onClick={() => setReplyTo(comment.id)}
+            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+          >
+            Reply
+          </button>
+          {replyTo === comment.id && (
+            <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+              <textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Write your reply..."
+                className="w-full p-2 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                rows="3"
+              />
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={addComment}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+                >
+                  Post Reply
+                </button>
+                <button
+                  onClick={() => { setReplyTo(null); setNewComment(''); }}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm font-medium"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+          {comment.replies.map(reply => (
+            <CommentComponent key={reply.id} comment={reply} depth={depth + 1} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (showUsernamePrompt) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
+          <div className="flex items-center gap-3 mb-6">
+            <Book className="text-blue-600" size={32} />
+            <h1 className="text-3xl font-bold text-gray-800">BookTalk</h1>
+          </div>
+          <p className="text-gray-600 mb-6">Choose a username to start discussing books</p>
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Enter username"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
+            onKeyPress={(e) => e.key === 'Enter' && username.trim() && setShowUsernamePrompt(false)}
+          />
+          <button
+            onClick={() => username.trim() && setShowUsernamePrompt(false)}
+            disabled={!username.trim()}
+            className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium"
+          >
+            Continue
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <header className="bg-white shadow-md">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+          <button 
+            onClick={() => setView('search')}
+            className="flex items-center gap-2 text-2xl font-bold text-blue-600 hover:text-blue-700"
+          >
+            <Book size={32} />
+            BookTalk
+          </button>
+          <div className="flex items-center gap-3">
+            <User size={20} className="text-gray-600" />
+            <span className="text-gray-700 font-medium">{username}</span>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-6xl mx-auto px-4 py-8">
+        {view === 'search' && (
+          <div className="max-w-2xl mx-auto">
+            <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">Find a Book to Discuss</h2>
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && searchBooks()}
+                  placeholder="Search by title, author, or ISBN..."
+                  className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <button
+                  onClick={searchBooks}
+                  disabled={loading}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 flex items-center gap-2 font-medium"
+                >
+                  <Search size={20} />
+                  {loading ? 'Searching...' : 'Search'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {view === 'results' && (
+          <div>
+            <button
+              onClick={() => setView('search')}
+              className="mb-6 text-blue-600 hover:text-blue-800 font-medium"
+            >
+              ← Back to Search
+            </button>
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">Search Results</h2>
+            <div className="grid gap-4">
+              {searchResults.map((book, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => selectBook(book)}
+                  className="bg-white rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow cursor-pointer flex gap-4"
+                >
+                  {book.cover ? (
+                    <img src={book.cover} alt={book.title} className="w-20 h-28 object-cover rounded" />
+                  ) : (
+                    <div className="w-20 h-28 bg-gray-200 rounded flex items-center justify-center">
+                      <Book size={32} className="text-gray-400" />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-gray-800 mb-1">{book.title}</h3>
+                    <p className="text-gray-600 mb-2">{book.author}</p>
+                    <div className="flex items-center gap-4 text-sm text-gray-500">
+                      {book.year && <span>Published: {book.year}</span>}
+                      {book.isbn && <span>ISBN: {book.isbn}</span>}
+                      <span className="flex items-center gap-1">
+                        <MessageSquare size={16} />
+                        {comments[book.isbn]?.length || 0} comments
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {view === 'book' && selectedBook && (
+          <div>
+            <button
+              onClick={() => setView('results')}
+              className="mb-6 text-blue-600 hover:text-blue-800 font-medium"
+            >
+              ← Back to Results
+            </button>
+            
+            <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+              <div className="flex gap-6">
+                {selectedBook.cover ? (
+                  <img src={selectedBook.cover} alt={selectedBook.title} className="w-32 h-48 object-cover rounded-lg shadow-md" />
+                ) : (
+                  <div className="w-32 h-48 bg-gray-200 rounded-lg flex items-center justify-center">
+                    <Book size={48} className="text-gray-400" />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <h2 className="text-3xl font-bold text-gray-800 mb-2">{selectedBook.title}</h2>
+                  <p className="text-xl text-gray-600 mb-4">{selectedBook.author}</p>
+                  <div className="flex gap-4 text-sm text-gray-500">
+                    {selectedBook.year && <span>Published: {selectedBook.year}</span>}
+                    {selectedBook.isbn && <span>ISBN: {selectedBook.isbn}</span>}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <MessageSquare size={24} />
+                Discussion
+              </h3>
+
+              <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex gap-3">
+                <AlertTriangle size={20} className="text-yellow-600 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-yellow-800">
+                  <strong>Spoiler Alert:</strong> This is an open discussion. Comments may contain spoilers about the book.
+                </p>
+              </div>
+
+              {!replyTo && (
+                <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                  <textarea
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="Share your thoughts about this book..."
+                    className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    rows="4"
+                  />
+                  <button
+                    onClick={addComment}
+                    disabled={!newComment.trim()}
+                    className="mt-3 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2 font-medium"
+                  >
+                    <Send size={18} />
+                    Post Comment
+                  </button>
+                </div>
+              )}
+
+              <div className="space-y-1">
+                {(comments[selectedBook.isbn] || []).map(comment => (
+                  <CommentComponent key={comment.id} comment={comment} />
+                ))}
+                {(!comments[selectedBook.isbn] || comments[selectedBook.isbn].length === 0) && (
+                  <p className="text-center text-gray-500 py-8">
+                    No comments yet. Be the first to share your thoughts about this book!
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+};
+
+export default BookTalkApp;
