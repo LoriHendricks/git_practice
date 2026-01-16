@@ -3,34 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Fitness Points Tracker</title>
+  <title>Fitness Points Tracker (Google Sheets)</title>
   <style>
     :root{
-      --bg:#0b1220;
-      --card:#111a2e;
-      --muted:#9fb0d0;
-      --text:#e8efff;
-      --accent:#7aa2ff;
-      --good:#3ddc97;
-      --warn:#ffcc66;
-      --bad:#ff6b6b;
+      --bg:#0b1220; --card:#111a2e; --muted:#9fb0d0; --text:#e8efff;
       --border: rgba(255,255,255,.10);
+      --good:#3ddc97; --warn:#ffcc66; --bad:#ff6b6b;
     }
     *{box-sizing:border-box}
     body{
       margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
       background: radial-gradient(1200px 600px at 20% -10%, rgba(122,162,255,.25), transparent 60%),
                   radial-gradient(900px 500px at 90% 0%, rgba(61,220,151,.18), transparent 55%),
                   var(--bg);
       color:var(--text);
     }
-    header{
-      padding:24px 16px 10px;
-      max-width:1100px;
-      margin:0 auto;
-    }
-    h1{margin:0 0 6px;font-size:28px;letter-spacing:.3px}
+    header{padding:24px 16px 10px; max-width:1100px; margin:0 auto;}
+    h1{margin:0 0 6px;font-size:28px}
     header p{margin:0;color:var(--muted)}
     main{
       max-width:1100px;
@@ -40,18 +30,15 @@
       grid-template-columns: 380px 1fr;
       gap:16px;
     }
-    @media (max-width: 900px){
-      main{grid-template-columns:1fr}
-    }
+    @media (max-width: 900px){ main{grid-template-columns:1fr} }
     .card{
-      background: linear-gradient(180deg, rgba(255,255,255,.06), transparent 60%),
-                  var(--card);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), transparent 60%), var(--card);
       border:1px solid var(--border);
       border-radius:16px;
       padding:16px;
       box-shadow: 0 10px 30px rgba(0,0,0,.28);
     }
-    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     label{display:block;font-size:12px;color:var(--muted);margin:10px 0 6px}
     input, select, textarea{
       width:100%;
@@ -63,129 +50,77 @@
       outline:none;
     }
     textarea{min-height:80px;resize:vertical}
-    input:focus, select:focus, textarea:focus{
-      border-color: rgba(122,162,255,.7);
-      box-shadow: 0 0 0 3px rgba(122,162,255,.16);
-    }
     .btn{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      padding:10px 12px;
-      border-radius:12px;
-      border:1px solid var(--border);
-      cursor:pointer;
-      background: rgba(122,162,255,.15);
-      color: var(--text);
-      font-weight:600;
-      user-select:none;
+      display:inline-flex; align-items:center; justify-content:center; gap:8px;
+      padding:10px 12px; border-radius:12px; border:1px solid var(--border);
+      cursor:pointer; background: rgba(122,162,255,.15); color: var(--text);
+      font-weight:600; user-select:none;
     }
-    .btn:hover{background: rgba(122,162,255,.22)}
-    .btn:active{transform: translateY(1px)}
     .btn.secondary{background: rgba(255,255,255,.08)}
-    .btn.secondary:hover{background: rgba(255,255,255,.12)}
     .btn.danger{background: rgba(255,107,107,.14)}
-    .btn.danger:hover{background: rgba(255,107,107,.20)}
+    .btn:disabled{opacity:.6; cursor:not-allowed}
     .pill{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding:8px 10px;
-      border:1px solid var(--border);
-      border-radius:999px;
-      color:var(--muted);
-      background: rgba(0,0,0,.18);
-      font-size:12px;
-      margin: 6px 6px 0 0;
+      display:inline-flex; align-items:center; gap:8px; padding:8px 10px;
+      border:1px solid var(--border); border-radius:999px;
+      color:var(--muted); background: rgba(0,0,0,.18); font-size:12px; margin: 6px 6px 0 0;
     }
-    .stat{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:10px;
-      margin-top: 10px;
-    }
-    .stat .box{
-      padding:12px;
-      border-radius:14px;
-      border:1px solid var(--border);
-      background: rgba(0,0,0,.18);
-    }
-    .stat .big{font-size:20px;font-weight:800}
-    .stat .small{font-size:12px;color:var(--muted)}
-    .hint{color:var(--muted);font-size:12px;margin-top:10px;line-height:1.35}
-    table{
-      width:100%;
-      border-collapse: separate;
-      border-spacing:0;
-      overflow:hidden;
-      border:1px solid var(--border);
-      border-radius:14px;
-    }
-    thead th{
-      text-align:left;
-      font-size:12px;
-      color:var(--muted);
-      padding:10px 12px;
-      background: rgba(0,0,0,.20);
-      border-bottom:1px solid var(--border);
-    }
-    tbody td{
-      padding:10px 12px;
-      border-bottom:1px solid rgba(255,255,255,.06);
-      font-size:14px;
-      vertical-align:top;
-    }
+    .stat{display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;}
+    .box{padding:12px;border-radius:14px;border:1px solid var(--border);background: rgba(0,0,0,.18);}
+    .big{font-size:20px;font-weight:800}
+    .small{font-size:12px;color:var(--muted)}
+    .mono{font-variant-numeric: tabular-nums}
+    .muted{color:var(--muted)}
+    .hidden{display:none !important}
+    .centerWrap{max-width:520px;margin:22px auto 40px;padding:0 16px}
+    .ok{color:var(--good)} .warn{color:var(--warn)} .bad{color:var(--bad)}
+    table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--border);border-radius:14px;overflow:hidden}
+    thead th{font-size:12px;color:var(--muted);padding:10px 12px;background: rgba(0,0,0,.20);border-bottom:1px solid var(--border);text-align:left}
+    tbody td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.06);font-size:14px;vertical-align:top}
     tbody tr:last-child td{border-bottom:none}
     .actions{display:flex;gap:8px;flex-wrap:wrap}
-    .tiny{
-      padding:7px 10px;
-      font-size:12px;
-      border-radius:10px;
-    }
-    .right-top{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:12px;
-      flex-wrap:wrap;
-    }
-    .mono{font-variant-numeric: tabular-nums}
-    .empty{
-      color:var(--muted);
-      padding:14px 12px;
-      border:1px dashed rgba(255,255,255,.16);
-      border-radius:14px;
-      margin-top:10px;
-      background: rgba(0,0,0,.14);
-    }
-    .badge{
-      font-size:12px;
-      padding:4px 8px;
-      border-radius:999px;
-      border:1px solid var(--border);
-      background: rgba(61,220,151,.12);
-      color: var(--text);
-      font-weight:700;
-    }
-    .muted{color:var(--muted)}
+    .tiny{padding:7px 10px;font-size:12px;border-radius:10px}
+    .empty{color:var(--muted);padding:14px 12px;border:1px dashed rgba(255,255,255,.16);border-radius:14px;background: rgba(0,0,0,.14)}
     .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    @media (max-width: 520px){
-      .grid2{grid-template-columns:1fr}
-    }
+    @media (max-width: 520px){ .grid2{grid-template-columns:1fr} }
   </style>
 </head>
 <body>
   <header>
     <h1>Fitness Points Tracker</h1>
-    <p>Log an activity → earn points based on type and minutes. Data saves in your browser.</p>
+    <p>Stores entries in a Google Sheet via Apps Script (email “login”, no password).</p>
   </header>
 
-  <main>
-    <section class="card" aria-label="Add activity">
-      <div class="right-top">
-        <div><div class="badge">LocalStorage</div></div>
-        <button class="btn secondary tiny" id="resetAllBtn" type="button">Reset all data</button>
+  <!-- LOGIN -->
+  <div class="centerWrap" id="loginScreen">
+    <section class="card">
+      <div style="font-size:16px;font-weight:900">Enter your email</div>
+      <div class="muted" style="font-size:12px;margin-top:6px">
+        This identifies your rows in the sheet. (Not secure auth — just lightweight.)
+      </div>
+
+      <label for="loginEmail">Email</label>
+      <input id="loginEmail" type="email" placeholder="you@example.com" />
+
+      <div class="row" style="margin-top:12px">
+        <button class="btn" id="loginBtn" type="button">Continue</button>
+      </div>
+
+      <div id="loginMsg" class="muted" style="margin-top:12px"></div>
+    </section>
+  </div>
+
+  <!-- APP -->
+  <main id="app" class="hidden">
+    <section class="card">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <div class="muted" style="font-size:12px">Logged in as</div>
+          <div class="mono" id="userEmail"></div>
+        </div>
+        <div class="row">
+          <button class="btn secondary tiny" id="refreshBtn" type="button">Refresh</button>
+          <button class="btn danger tiny" id="logoutBtn" type="button">Log out</button>
+        </div>
       </div>
 
       <form id="activityForm" autocomplete="off">
@@ -223,20 +158,18 @@
         </div>
       </div>
 
-      <div class="hint">
-        <div style="margin-top:10px;font-weight:700;color:var(--text)">Scoring rules</div>
-        <div class="muted">Points = minutes × rate</div>
-        <div id="rulesPills" style="margin-top:6px"></div>
+      <div class="muted" style="font-size:12px;margin-top:10px">
+        Points = minutes × rate
       </div>
+      <div id="rulesPills" style="margin-top:6px"></div>
     </section>
 
-    <section class="card" aria-label="Activity history">
-      <div class="right-top">
+    <section class="card">
+      <div class="row" style="justify-content:space-between">
         <div>
           <div style="font-size:16px;font-weight:800">History</div>
-          <div class="muted" style="font-size:12px;margin-top:2px">Edit or delete past entries.</div>
+          <div class="muted" style="font-size:12px">Saved in Google Sheets</div>
         </div>
-
         <div class="row">
           <select id="filterType" style="width:200px">
             <option value="all">All activities</option>
@@ -255,8 +188,15 @@
   </main>
 
   <script>
-    // ====== CONFIG: points per minute for each activity ======
-    // Added: Rowing, Pilates, Hiking, Jump Rope
+    // ==========================
+    // CONFIG: Apps Script endpoint
+    // ==========================
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxyDP-N9oVvM0Q-1590lrtA97oCEJ7vshkaROUbAtycrBP84o05OS422RTt__Pe-8q7tA/exec";
+    const API_KEY = "13579asdfj2468poiu";
+
+    // ==========================
+    // Activity rates
+    // ==========================
     const ACTIVITY_RATES = {
       "Walking": 1,
       "Yoga / Stretching": 2,
@@ -266,19 +206,27 @@
       "Running": 4,
       "HIIT": 5,
       "Sports (Basketball, Soccer, etc.)": 4,
-
       "Rowing": 4,
       "Pilates": 2,
       "Hiking": 3,
       "Jump Rope": 6
     };
 
-    const STORAGE_KEY = "fitness_points_tracker_v1";
-
-    let entries = [];            // { id, type, minutes, date, notes, points }
+    // ==========================
+    // State
+    // ==========================
+    let userEmail = "";
+    let entries = [];    // { id, type, minutes, date, notes, points }
     let editingId = null;
 
+    // ==========================
+    // Helpers
+    // ==========================
     const $ = (sel) => document.querySelector(sel);
+
+    const escapeHtml = (str) => String(str)
+      .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;").replaceAll("'","&#039;");
 
     const fmtDate = (iso) => {
       const [y,m,d] = iso.split("-").map(Number);
@@ -289,19 +237,6 @@
     const calcPoints = (type, minutes) => {
       const rate = ACTIVITY_RATES[type] ?? 1;
       return Math.round((Number(minutes) * rate) * 10) / 10;
-    };
-
-    const uid = () => Math.random().toString(16).slice(2) + Date.now().toString(16);
-
-    const save = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-    const load = () => {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        entries = raw ? JSON.parse(raw) : [];
-        if (!Array.isArray(entries)) entries = [];
-      } catch {
-        entries = [];
-      }
     };
 
     const startOfWeekISO = (dateObj) => {
@@ -325,7 +260,56 @@
       return dt >= start && dt < end;
     };
 
-    const renderActivityOptions = () => {
+    // ==========================
+    // API calls
+    // ==========================
+    async function apiList() {
+      const url = new URL(SCRIPT_URL);
+      url.searchParams.set("action", "list");
+      url.searchParams.set("key", API_KEY);
+      url.searchParams.set("email", userEmail);
+
+      const res = await fetch(url.toString(), { method: "GET" });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "List failed");
+      return data.items || [];
+    }
+
+    async function apiAdd(entry) {
+      const res = await fetch(SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "add", key: API_KEY, email: userEmail, ...entry })
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "Add failed");
+      return data.id;
+    }
+
+    async function apiUpdate(id, entry) {
+      const res = await fetch(SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "update", key: API_KEY, email: userEmail, id, ...entry })
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "Update failed");
+    }
+
+    async function apiDelete(id) {
+      const res = await fetch(SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", key: API_KEY, email: userEmail, id })
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "Delete failed");
+    }
+
+    // ==========================
+    // UI render
+    // ==========================
+    function renderActivityOptions() {
       const activityType = $("#activityType");
       const filterType = $("#filterType");
       activityType.innerHTML = "";
@@ -342,9 +326,9 @@
         opt2.textContent = name;
         filterType.appendChild(opt2);
       });
-    };
+    }
 
-    const renderRulesPills = () => {
+    function renderRulesPills() {
       const wrap = $("#rulesPills");
       wrap.innerHTML = "";
       Object.entries(ACTIVITY_RATES).forEach(([name, rate]) => {
@@ -353,9 +337,9 @@
         pill.innerHTML = `<span>${escapeHtml(name)}</span> <span class="mono">× ${rate}/min</span>`;
         wrap.appendChild(pill);
       });
-    };
+    }
 
-    const getFilteredSortedEntries = () => {
+    function getFilteredSortedEntries() {
       const filter = $("#filterType").value;
       const sortBy = $("#sortBy").value;
 
@@ -370,24 +354,22 @@
       };
       list.sort(sorters[sortBy] || sorters.date_desc);
       return list;
-    };
+    }
 
-    const renderStats = () => {
+    function renderStats() {
       const total = entries.reduce((sum,e) => sum + Number(e.points || 0), 0);
-      const week = entries
-        .filter(e => isInThisWeek(e.date))
-        .reduce((sum,e) => sum + Number(e.points || 0), 0);
-
+      const week = entries.filter(e => isInThisWeek(e.date))
+                          .reduce((sum,e) => sum + Number(e.points || 0), 0);
       $("#totalPoints").textContent = (Math.round(total * 10) / 10).toString();
       $("#weekPoints").textContent = (Math.round(week * 10) / 10).toString();
-    };
+    }
 
-    const renderTable = () => {
+    function renderTable() {
       const wrap = $("#tableWrap");
       const list = getFilteredSortedEntries();
 
       if (list.length === 0) {
-        wrap.innerHTML = `<div class="empty">No entries yet. Add your first activity on the left.</div>`;
+        wrap.innerHTML = `<div class="empty">No entries yet.</div>`;
         return;
       }
 
@@ -424,37 +406,32 @@
       `;
 
       wrap.querySelectorAll("button[data-action]").forEach(btn => {
-        btn.addEventListener("click", () => {
+        btn.addEventListener("click", async () => {
           const action = btn.dataset.action;
           const id = btn.dataset.id;
           if (action === "edit") beginEdit(id);
-          if (action === "delete") deleteEntry(id);
+          if (action === "delete") await deleteEntry(id);
         });
       });
-    };
+    }
 
-    const escapeHtml = (str) => {
-      return String(str)
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    };
+    function renderAll() {
+      renderStats();
+      renderTable();
+    }
 
-    const resetForm = () => {
+    function resetForm() {
       editingId = null;
       $("#submitBtn").textContent = "Add activity";
       $("#cancelEditBtn").style.display = "none";
       $("#activityForm").reset();
-
       $("#date").valueAsDate = new Date();
       const first = Object.keys(ACTIVITY_RATES)[0];
       if (first) $("#activityType").value = first;
       $("#minutes").focus();
-    };
+    }
 
-    const beginEdit = (id) => {
+    function beginEdit(id) {
       const e = entries.find(x => x.id === id);
       if (!e) return;
       editingId = id;
@@ -467,46 +444,97 @@
       $("#submitBtn").textContent = "Save changes";
       $("#cancelEditBtn").style.display = "inline-flex";
       $("#minutes").focus();
-    };
+    }
 
-    const upsertEntry = (payload) => {
-      if (editingId) {
-        const idx = entries.findIndex(x => x.id === editingId);
-        if (idx >= 0) entries[idx] = { ...entries[idx], ...payload };
-      } else {
-        entries.push({ id: uid(), ...payload });
+    // ==========================
+    // Data operations
+    // ==========================
+    async function refreshFromSheet() {
+      $("#refreshBtn").disabled = true;
+      $("#refreshBtn").textContent = "Refreshing…";
+      try {
+        entries = await apiList();
+        renderAll();
+      } finally {
+        $("#refreshBtn").disabled = false;
+        $("#refreshBtn").textContent = "Refresh";
       }
-      save();
-      renderAll();
-      resetForm();
-    };
+    }
 
-    const deleteEntry = (id) => {
+    async function upsertEntry(entry) {
+      if (editingId) {
+        await apiUpdate(editingId, entry);
+      } else {
+        const id = await apiAdd(entry);
+        // We could push locally, but easiest is to refresh to stay consistent with Sheet
+      }
+      await refreshFromSheet();
+      resetForm();
+    }
+
+    async function deleteEntry(id) {
       const e = entries.find(x => x.id === id);
       if (!e) return;
       const ok = confirm(`Delete this entry?\n\n${e.type} — ${e.minutes} min — ${e.points} points`);
       if (!ok) return;
-      entries = entries.filter(x => x.id !== id);
-      save();
+
+      await apiDelete(id);
+      await refreshFromSheet();
       if (editingId === id) resetForm();
-      renderAll();
-    };
+    }
 
-    const renderAll = () => {
-      renderStats();
-      renderTable();
-    };
+    // ==========================
+    // Login / Boot
+    // ==========================
+    function showLogin(msg = "") {
+      $("#loginScreen").classList.remove("hidden");
+      $("#app").classList.add("hidden");
+      $("#loginMsg").textContent = msg;
+    }
 
-    const init = () => {
-      load();
-      renderActivityOptions();
-      renderRulesPills();
+    function showApp() {
+      $("#loginScreen").classList.add("hidden");
+      $("#app").classList.remove("hidden");
+      $("#userEmail").textContent = userEmail;
+    }
 
-      $("#date").valueAsDate = new Date();
-      const first = Object.keys(ACTIVITY_RATES)[0];
-      if (first) $("#activityType").value = first;
+    function saveSessionEmail(email) {
+      localStorage.setItem("fitness_user_email", email);
+    }
+    function loadSessionEmail() {
+      return (localStorage.getItem("fitness_user_email") || "").trim();
+    }
+    function clearSessionEmail() {
+      localStorage.removeItem("fitness_user_email");
+    }
 
-      $("#activityForm").addEventListener("submit", (ev) => {
+    function wireEventsOnce() {
+      $("#loginBtn").addEventListener("click", async () => {
+        const email = $("#loginEmail").value.trim().toLowerCase();
+        if (!email) return showLogin("Enter an email.");
+        if (!SCRIPT_URL.startsWith("http")) return showLogin("Set SCRIPT_URL in the code first.");
+
+        userEmail = email;
+        saveSessionEmail(email);
+
+        showApp();
+        renderActivityOptions();
+        renderRulesPills();
+        resetForm();
+        await refreshFromSheet();
+      });
+
+      $("#logoutBtn").addEventListener("click", () => {
+        userEmail = "";
+        entries = [];
+        editingId = null;
+        clearSessionEmail();
+        showLogin("Logged out.");
+      });
+
+      $("#refreshBtn").addEventListener("click", refreshFromSheet);
+
+      $("#activityForm").addEventListener("submit", async (ev) => {
         ev.preventDefault();
 
         const type = $("#activityType").value;
@@ -520,34 +548,31 @@
         }
 
         const points = calcPoints(type, minutes);
-
-        upsertEntry({
-          type,
-          minutes,
-          date,
-          notes: notes || "",
-          points
-        });
+        await upsertEntry({ type, minutes, date, notes: notes || "", points });
       });
 
-      $("#cancelEditBtn").addEventListener("click", () => resetForm());
-
+      $("#cancelEditBtn").addEventListener("click", resetForm);
       $("#filterType").addEventListener("change", renderTable);
       $("#sortBy").addEventListener("change", renderTable);
+    }
 
-      $("#resetAllBtn").addEventListener("click", () => {
-        const ok = confirm("This will delete all saved entries. Continue?");
-        if (!ok) return;
-        entries = [];
-        save();
+    async function boot() {
+      wireEventsOnce();
+
+      const saved = loadSessionEmail();
+      if (saved && SCRIPT_URL.startsWith("http")) {
+        userEmail = saved.toLowerCase();
+        showApp();
+        renderActivityOptions();
+        renderRulesPills();
         resetForm();
-        renderAll();
-      });
+        await refreshFromSheet();
+      } else {
+        showLogin("");
+      }
+    }
 
-      renderAll();
-    };
-
-    init();
+    boot();
   </script>
 </body>
 </html>
